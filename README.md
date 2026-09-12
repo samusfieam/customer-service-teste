@@ -183,8 +183,8 @@ http://localhost:15672
 
 Credenciais locais:
 
-- Usuario: `guest`
-- Senha: `guest`
+- Usuario: `customer`
+- Senha: `customer`
 
 Configuracao de mensageria:
 
@@ -205,7 +205,7 @@ Evento publicado ao criar cliente:
 }
 ```
 
-Evento consumido para alteracao de status:
+Evento consumido para alteração de status:
 
 ```json
 {
