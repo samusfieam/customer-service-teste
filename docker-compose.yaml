@@ -21,5 +21,14 @@ services:
       - "5672:5672"
       - "15672:15672"
 
+  wiremock:
+    image: wiremock/wiremock:3.9.1
+    container_name: customer-wiremock
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./wiremock/mappings:/home/wiremock/mappings
+      - ./wiremock/__files:/home/wiremock/__files
+
 volumes:
   customer_postgres_data:

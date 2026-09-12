@@ -5,6 +5,8 @@ import com.samu.customerservice.customer.dto.CustomerResponse;
 import com.samu.customerservice.customer.dto.UpdateCustomerRequest;
 import com.samu.customerservice.exception.CustomerAlreadyExistsException;
 import com.samu.customerservice.exception.CustomerNotFoundException;
+import com.samu.customerservice.score.ScoreClient;
+import com.samu.customerservice.score.ScoreResponse;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -14,9 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class CustomerService {
 
     private final CustomerRepository customerRepository;
+    private final ScoreClient scoreClient;
 
-    public CustomerService(CustomerRepository customerRepository) {
+    public CustomerService(CustomerRepository customerRepository, ScoreClient scoreClient) {
         this.customerRepository = customerRepository;
+        this.scoreClient = scoreClient;
     }
 
     @Transactional
@@ -114,5 +118,13 @@ public class CustomerService {
                 .orElseThrow(() -> new CustomerNotFoundException(id));
 
         customerRepository.delete(customer);
+    }
+
+    @Transactional(readOnly = true)
+    public ScoreResponse getScore(Long customerId) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new CustomerNotFoundException(customerId));
+
+        return scoreClient.getScore(customer.getCpf());
     }
 }

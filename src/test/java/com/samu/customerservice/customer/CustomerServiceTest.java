@@ -5,6 +5,8 @@ import com.samu.customerservice.customer.dto.CustomerResponse;
 import com.samu.customerservice.customer.dto.UpdateCustomerRequest;
 import com.samu.customerservice.exception.CustomerAlreadyExistsException;
 import com.samu.customerservice.exception.CustomerNotFoundException;
+import com.samu.customerservice.score.ScoreClient;
+import com.samu.customerservice.score.ScoreResponse;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,9 @@ class CustomerServiceTest {
 
     @Mock
     private CustomerRepository customerRepository;
+
+    @Mock
+    private ScoreClient scoreClient;
 
     @InjectMocks
     private CustomerService customerService;
@@ -240,5 +245,35 @@ class CustomerServiceTest {
         assertTrue(exception.getMessage().contains("1"));
         verify(customerRepository).findById(1L);
         verify(customerRepository, never()).delete(any(Customer.class));
+    }
+
+    @Test
+    void returnsScoreWhenCustomerExists() {
+        Customer customer = new Customer(
+                "Joao Silva", "12345678901", "joao@example.com", CustomerStatus.ACTIVE);
+        ReflectionTestUtils.setField(customer, "id", 1L);
+        ScoreResponse scoreResponse = new ScoreResponse("12345678901", 750, "LOW_RISK");
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(scoreClient.getScore(customer.getCpf())).thenReturn(scoreResponse);
+
+        ScoreResponse response = customerService.getScore(1L);
+
+        assertEquals(scoreResponse.getCpf(), response.getCpf());
+        assertEquals(scoreResponse.getScore(), response.getScore());
+        assertEquals(scoreResponse.getClassification(), response.getClassification());
+        verify(customerRepository).findById(1L);
+        verify(scoreClient).getScore(customer.getCpf());
+    }
+
+    @Test
+    void throwsWhenGetScoreCustomerDoesNotExist() {
+        when(customerRepository.findById(1L)).thenReturn(Optional.empty());
+
+        CustomerNotFoundException exception = assertThrows(
+                CustomerNotFoundException.class, () -> customerService.getScore(1L));
+
+        assertTrue(exception.getMessage().contains("1"));
+        verify(customerRepository).findById(1L);
+        verify(scoreClient, never()).getScore(any(String.class));
     }
 }

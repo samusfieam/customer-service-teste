@@ -3,6 +3,7 @@ package com.samu.customerservice.customer;
 import com.samu.customerservice.customer.dto.CreateCustomerRequest;
 import com.samu.customerservice.customer.dto.CustomerResponse;
 import com.samu.customerservice.customer.dto.UpdateCustomerRequest;
+import com.samu.customerservice.score.ScoreResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -62,5 +63,11 @@ public class CustomerController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         customerService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/score")
+    public ResponseEntity<ScoreResponse> getScore(@PathVariable Long id) {
+        ScoreResponse response = customerService.getScore(id);
+        return ResponseEntity.ok(response);
     }
 }

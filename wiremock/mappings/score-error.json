@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/scores/99999999999"
+  },
+  "response": {
+    "status": 500,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "message": "Score service failed"
+    }
+  }
+}
