@@ -1,0 +1,70 @@
+{
+  "realm": "customer-service",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "USER"
+      },
+      {
+        "name": "ADMIN"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "customer-service",
+      "name": "Customer Service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "*"
+      ],
+      "webOrigins": [
+        "*"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "customer-user",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Customer",
+      "lastName": "User",
+      "email": "customer-user@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "user123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "USER"
+      ]
+    },
+    {
+      "username": "customer-admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Customer",
+      "lastName": "Admin",
+      "email": "customer-admin@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ADMIN"
+      ]
+    }
+  ]
+}
