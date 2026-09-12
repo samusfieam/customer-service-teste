@@ -57,7 +57,9 @@ Responsabilidades principais:
 8. A integração de Score usa WireMock como serviço externo fake, evitando criar um segundo microsserviço Spring Boot apenas para o teste.
 9. A integração de Score tem timeout de 2 segundos. Resposta normal retorna `200`, cliente inexistente retorna `404`, erro 5xx do Score retorna `503` e timeout retorna `504`.
 10. A mensageria usa Spring AMQP diretamente, com eventos específicos e configuração explícita de exchange, filas e routing keys.
-11. A idempotência do consumo de `CUSTOMER_STATUS_CHANGE` usa `eventId` único na tabela `processed_events`. Mensagens duplicadas não alteram novamente o cliente, e a atualização de status ocorre na mesma transação do registro do evento processado.
+11. A criação de cliente usa Transactional Outbox para evitar dual write entre PostgreSQL e RabbitMQ. O cliente e o `OutboxEvent` são persistidos na mesma transação, e a publicação no RabbitMQ ocorre de forma assíncrona.
+12. A entrega dos eventos da outbox segue o modelo at-least-once. O campo `publishedAt` identifica eventos já publicados; se a publicação for recebida pelo RabbitMQ e a marcação falhar, o evento pode ser republicado.
+13. A idempotência do consumo de `CUSTOMER_STATUS_CHANGE` usa `eventId` único na tabela `processed_events`. Mensagens duplicadas não alteram novamente o cliente, e a atualização de status ocorre na mesma transação do registro do evento processado.
 
 ## Running the application
 
@@ -194,7 +196,7 @@ Configuração de mensageria:
 - Fila de criação: `customer.created.queue`
 - Fila de alteração de status: `customer.status.change.queue`
 
-Evento publicado ao criar cliente:
+Evento gerado ao criar cliente:
 
 ```json
 {
@@ -217,6 +219,8 @@ Evento consumido para alteração de status:
 ```
 
 A idempotência do consumo é garantida pela tabela `processed_events`. Se uma mensagem com o mesmo `eventId` for entregue novamente, ela é ignorada e o status do cliente não é alterado outra vez.
+
+Na criação de clientes, o projeto usa Transactional Outbox. O cliente e o evento `CUSTOMER_CREATED` são gravados juntos no PostgreSQL. Um processo agendado publica eventos pendentes no RabbitMQ e preenche `publishedAt` apenas após sucesso na publicação.
 
 ## Tests
 

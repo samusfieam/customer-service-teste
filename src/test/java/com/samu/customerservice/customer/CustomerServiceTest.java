@@ -7,6 +7,8 @@ import com.samu.customerservice.customer.event.CustomerCreatedEvent;
 import com.samu.customerservice.customer.event.CustomerCreatedEventPublisher;
 import com.samu.customerservice.exception.CustomerAlreadyExistsException;
 import com.samu.customerservice.exception.CustomerNotFoundException;
+import com.samu.customerservice.messaging.OutboxEvent;
+import com.samu.customerservice.messaging.OutboxEventRepository;
 import com.samu.customerservice.score.ScoreClient;
 import com.samu.customerservice.score.ScoreResponse;
 import java.util.List;
@@ -27,7 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import tools.jackson.databind.ObjectMapper;
 
 @ExtendWith(MockitoExtension.class)
 class CustomerServiceTest {
@@ -37,6 +41,12 @@ class CustomerServiceTest {
 
     @Mock
     private ScoreClient scoreClient;
+
+    @Mock
+    private OutboxEventRepository outboxEventRepository;
+
+    @Mock
+    private ObjectMapper objectMapper;
 
     @Mock
     private CustomerCreatedEventPublisher customerCreatedEventPublisher;
@@ -57,6 +67,8 @@ class CustomerServiceTest {
         ReflectionTestUtils.setField(savedCustomer, "id", 1L);
         when(customerRepository.existsByCpf(request.getCpf())).thenReturn(false);
         when(customerRepository.save(any(Customer.class))).thenReturn(savedCustomer);
+        when(objectMapper.writeValueAsString(any(CustomerCreatedEvent.class)))
+                .thenReturn("{\"eventType\":\"CUSTOMER_CREATED\"}");
 
         CustomerResponse response = customerService.create(request);
 
@@ -77,12 +89,23 @@ class CustomerServiceTest {
         assertEquals(savedCustomer.getStatus(), response.getStatus());
 
         ArgumentCaptor<CustomerCreatedEvent> eventCaptor = ArgumentCaptor.forClass(CustomerCreatedEvent.class);
-        verify(customerCreatedEventPublisher).publish(eventCaptor.capture());
-        CustomerCreatedEvent event = eventCaptor.getValue();
-        assertNotNull(event.getEventId());
-        assertEquals("CUSTOMER_CREATED", event.getEventType());
-        assertEquals(savedCustomer.getId(), event.getCustomerId());
-        assertNotNull(event.getCreatedAt());
+        verify(objectMapper).writeValueAsString(eventCaptor.capture());
+        CustomerCreatedEvent customerCreatedEvent = eventCaptor.getValue();
+        assertNotNull(customerCreatedEvent.getEventId());
+        assertEquals("CUSTOMER_CREATED", customerCreatedEvent.getEventType());
+        assertEquals(savedCustomer.getId(), customerCreatedEvent.getCustomerId());
+        assertNotNull(customerCreatedEvent.getCreatedAt());
+
+        ArgumentCaptor<OutboxEvent> outboxEventCaptor = ArgumentCaptor.forClass(OutboxEvent.class);
+        verify(outboxEventRepository).save(outboxEventCaptor.capture());
+        OutboxEvent outboxEvent = outboxEventCaptor.getValue();
+        assertEquals(customerCreatedEvent.getEventId(), outboxEvent.getEventId());
+        assertEquals("CUSTOMER_CREATED", outboxEvent.getEventType());
+        assertEquals(savedCustomer.getId(), outboxEvent.getAggregateId());
+        assertEquals("{\"eventType\":\"CUSTOMER_CREATED\"}", outboxEvent.getPayload());
+        assertNotNull(outboxEvent.getCreatedAt());
+        assertNull(outboxEvent.getPublishedAt());
+        verifyNoInteractions(customerCreatedEventPublisher);
     }
 
     @Test
@@ -100,6 +123,8 @@ class CustomerServiceTest {
         assertTrue(exception.getMessage().contains(request.getCpf()));
         verify(customerRepository).existsByCpf(request.getCpf());
         verify(customerRepository, never()).save(any(Customer.class));
+        verify(outboxEventRepository, never()).save(any(OutboxEvent.class));
+        verifyNoInteractions(customerCreatedEventPublisher);
     }
 
     @Test

@@ -4,9 +4,10 @@ import com.samu.customerservice.customer.dto.CreateCustomerRequest;
 import com.samu.customerservice.customer.dto.CustomerResponse;
 import com.samu.customerservice.customer.dto.UpdateCustomerRequest;
 import com.samu.customerservice.customer.event.CustomerCreatedEvent;
-import com.samu.customerservice.customer.event.CustomerCreatedEventPublisher;
 import com.samu.customerservice.exception.CustomerAlreadyExistsException;
 import com.samu.customerservice.exception.CustomerNotFoundException;
+import com.samu.customerservice.messaging.OutboxEvent;
+import com.samu.customerservice.messaging.OutboxEventRepository;
 import com.samu.customerservice.score.ScoreClient;
 import com.samu.customerservice.score.ScoreResponse;
 import java.time.Instant;
@@ -15,21 +16,26 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final ScoreClient scoreClient;
-    private final CustomerCreatedEventPublisher customerCreatedEventPublisher;
+    private final OutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper;
 
     public CustomerService(
             CustomerRepository customerRepository,
             ScoreClient scoreClient,
-            CustomerCreatedEventPublisher customerCreatedEventPublisher) {
+            OutboxEventRepository outboxEventRepository,
+            ObjectMapper objectMapper) {
         this.customerRepository = customerRepository;
         this.scoreClient = scoreClient;
-        this.customerCreatedEventPublisher = customerCreatedEventPublisher;
+        this.outboxEventRepository = outboxEventRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional
@@ -47,7 +53,14 @@ public class CustomerService {
                 "CUSTOMER_CREATED",
                 savedCustomer.getId(),
                 Instant.now().toString());
-        customerCreatedEventPublisher.publish(event);
+        OutboxEvent outboxEvent = new OutboxEvent(
+                event.getEventId(),
+                event.getEventType(),
+                savedCustomer.getId(),
+                serializeEvent(event),
+                Instant.now(),
+                null);
+        outboxEventRepository.save(outboxEvent);
 
         return new CustomerResponse(
                 savedCustomer.getId(),
@@ -142,5 +155,13 @@ public class CustomerService {
                 .orElseThrow(() -> new CustomerNotFoundException(customerId));
 
         return scoreClient.getScore(customer.getCpf());
+    }
+
+    private String serializeEvent(CustomerCreatedEvent event) {
+        try {
+            return objectMapper.writeValueAsString(event);
+        } catch (JacksonException exception) {
+            throw new IllegalStateException("Nao foi possivel serializar evento de cliente criado.", exception);
+        }
     }
 }
