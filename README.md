@@ -1,6 +1,6 @@
 # Customer Service
 
-API REST para gerenciamento de clientes, integracao externa de Score, seguranca OAuth2/JWT com Keycloak e mensageria assincrona com RabbitMQ.
+API REST para gerenciamento de clientes, integração externa de Score, segurança OAuth2/JWT com Keycloak e mensageria assíncrona com RabbitMQ.
 
 ## Architecture Overview
 
@@ -21,11 +21,11 @@ Customer Service -> HTTP -> WireMock Score Service
 
 Responsabilidades principais:
 
-- Customer Service: expoe os endpoints REST de clientes, valida regras de negocio, consulta Score externo e publica/consome eventos RabbitMQ.
-- PostgreSQL: armazena clientes e eventos processados para idempotencia.
-- Keycloak: emite os tokens JWT usados pela aplicacao como OAuth2 Resource Server.
-- RabbitMQ: transporta eventos de criacao de cliente e alteracao de status.
-- WireMock: simula o servico externo de Score para testes locais.
+- Customer Service: expõe os endpoints REST de clientes, valida regras de negócio, consulta Score externo e publica/consome eventos RabbitMQ.
+- PostgreSQL: armazena clientes e eventos processados para idempotência.
+- Keycloak: emite os tokens JWT usados pela aplicação como OAuth2 Resource Server.
+- RabbitMQ: transporta eventos de criação de cliente e alteração de status.
+- WireMock: simula o serviço externo de Score para testes locais.
 
 ## Technology Stack
 
@@ -47,8 +47,8 @@ Responsabilidades principais:
 
 ## Architecture Decisions
 
-1. A aplicacao usa uma arquitetura simples, sem CQRS ou Command Handler, porque o escopo do teste tecnico nao exige essa separacao.
-2. O codigo evita abstracoes genericas prematuras, como `GenericService`, `BaseController` ou `EventBus` generico.
+1. A aplicaçaao usa uma arquitetura simples, sem CQRS ou Command Handler, porque o escopo do teste técnico não exige essa separação.
+2. O código evita abstrações genéricas prematuras, como `GenericService`, `BaseController` ou `EventBus` genérico.
 3. O ambiente local usa PostgreSQL em Docker em vez de H2, mantendo o comportamento mais proximo do banco real esperado.
 4. CPF e imutavel apos a criacao do cliente. O `PUT /customers/{id}` altera apenas `name`, `email` e `status`; se `cpf` for enviado no body, a API retorna `400 Bad Request`.
 5. Swagger/OpenAPI foi incluido para facilitar a avaliacao e a execucao manual dos endpoints.
