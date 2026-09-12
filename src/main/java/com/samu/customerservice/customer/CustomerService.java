@@ -3,12 +3,16 @@ package com.samu.customerservice.customer;
 import com.samu.customerservice.customer.dto.CreateCustomerRequest;
 import com.samu.customerservice.customer.dto.CustomerResponse;
 import com.samu.customerservice.customer.dto.UpdateCustomerRequest;
+import com.samu.customerservice.customer.event.CustomerCreatedEvent;
+import com.samu.customerservice.customer.event.CustomerCreatedEventPublisher;
 import com.samu.customerservice.exception.CustomerAlreadyExistsException;
 import com.samu.customerservice.exception.CustomerNotFoundException;
 import com.samu.customerservice.score.ScoreClient;
 import com.samu.customerservice.score.ScoreResponse;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,10 +21,15 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final ScoreClient scoreClient;
+    private final CustomerCreatedEventPublisher customerCreatedEventPublisher;
 
-    public CustomerService(CustomerRepository customerRepository, ScoreClient scoreClient) {
+    public CustomerService(
+            CustomerRepository customerRepository,
+            ScoreClient scoreClient,
+            CustomerCreatedEventPublisher customerCreatedEventPublisher) {
         this.customerRepository = customerRepository;
         this.scoreClient = scoreClient;
+        this.customerCreatedEventPublisher = customerCreatedEventPublisher;
     }
 
     @Transactional
@@ -32,6 +41,13 @@ public class CustomerService {
         Customer customer = new Customer(
                 request.getName(), request.getCpf(), request.getEmail(), request.getStatus());
         Customer savedCustomer = customerRepository.save(customer);
+
+        CustomerCreatedEvent event = new CustomerCreatedEvent(
+                UUID.randomUUID().toString(),
+                "CUSTOMER_CREATED",
+                savedCustomer.getId(),
+                Instant.now().toString());
+        customerCreatedEventPublisher.publish(event);
 
         return new CustomerResponse(
                 savedCustomer.getId(),

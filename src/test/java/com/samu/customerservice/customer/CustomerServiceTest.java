@@ -3,6 +3,8 @@ package com.samu.customerservice.customer;
 import com.samu.customerservice.customer.dto.CreateCustomerRequest;
 import com.samu.customerservice.customer.dto.CustomerResponse;
 import com.samu.customerservice.customer.dto.UpdateCustomerRequest;
+import com.samu.customerservice.customer.event.CustomerCreatedEvent;
+import com.samu.customerservice.customer.event.CustomerCreatedEventPublisher;
 import com.samu.customerservice.exception.CustomerAlreadyExistsException;
 import com.samu.customerservice.exception.CustomerNotFoundException;
 import com.samu.customerservice.score.ScoreClient;
@@ -18,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -34,6 +37,9 @@ class CustomerServiceTest {
 
     @Mock
     private ScoreClient scoreClient;
+
+    @Mock
+    private CustomerCreatedEventPublisher customerCreatedEventPublisher;
 
     @InjectMocks
     private CustomerService customerService;
@@ -69,6 +75,14 @@ class CustomerServiceTest {
         assertEquals(savedCustomer.getCpf(), response.getCpf());
         assertEquals(savedCustomer.getEmail(), response.getEmail());
         assertEquals(savedCustomer.getStatus(), response.getStatus());
+
+        ArgumentCaptor<CustomerCreatedEvent> eventCaptor = ArgumentCaptor.forClass(CustomerCreatedEvent.class);
+        verify(customerCreatedEventPublisher).publish(eventCaptor.capture());
+        CustomerCreatedEvent event = eventCaptor.getValue();
+        assertNotNull(event.getEventId());
+        assertEquals("CUSTOMER_CREATED", event.getEventType());
+        assertEquals(savedCustomer.getId(), event.getCustomerId());
+        assertNotNull(event.getCreatedAt());
     }
 
     @Test
