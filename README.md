@@ -30,14 +30,14 @@ Responsabilidades principais:
 ## Technology Stack
 
 - Java 17
-- Spring Boot 3.x
+- Spring Boot 4.1.x
 - Spring Web
 - Spring Data JPA
 - Spring Validation
 - Spring Security OAuth2 Resource Server
 - Spring AMQP
 - PostgreSQL
-- RabbitMQ
+- RabbitMQ 3
 - Keycloak
 - WireMock
 - Swagger/OpenAPI com springdoc-openapi
