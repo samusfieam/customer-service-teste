@@ -2,7 +2,7 @@
 
 API REST para gerenciamento de clientes, integração externa de Score, segurança OAuth2/JWT com Keycloak e mensageria assíncrona com RabbitMQ.
 
-## Architecture Overview
+## Arquitetura Overview
 
 ```text
 Client / Swagger / Postman
@@ -27,7 +27,7 @@ Responsabilidades principais:
 - RabbitMQ: transporta eventos de criação de cliente e alteração de status.
 - WireMock: simula o serviço externo de Score para testes locais.
 
-## Technology Stack
+## Stack Utilizada
 
 - Java 17
 - Spring Boot 4.1.x
@@ -62,7 +62,7 @@ Responsabilidades principais:
 13. A idempotência do consumo de `CUSTOMER_STATUS_CHANGE` usa `eventId` único na tabela `processed_events`. O registro do evento e a alteração de status fazem parte da mesma transação. Duplicatas, inclusive concorrentes, são arbitradas pelo banco e não geram novo efeito no cliente.
 14. A fila `customer.status.change.queue` possui DLQ específica para evitar reprocessamento infinito de mensagens com falha definitiva. Não há retry sofisticado nesta implementação por decisão de simplicidade.
 
-## Running the application
+## Executando a aplicação
 
 Pré-requisitos:
 
@@ -98,7 +98,7 @@ Serviços locais:
 - Keycloak: http://localhost:8082
 - PostgreSQL: localhost:5432
 
-## Authentication
+## Autenticação
 
 Configuração local:
 
