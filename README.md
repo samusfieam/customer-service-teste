@@ -45,7 +45,7 @@ Responsabilidades principais:
 - Docker Compose
 - JUnit 5 e Mockito
 
-## Architecture Decisions
+## Decisões Arquiteturais
 
 1. A aplicação usa uma arquitetura simples, sem CQRS ou Command Handler, porque o escopo do teste técnico não exige essa separação.
 2. O código evita abstrações genéricas prematuras, como `GenericService`, `BaseController` ou `EventBus` genérico.
