@@ -224,13 +224,21 @@ Na criação de clientes, o projeto usa Transactional Outbox. O cliente e o even
 
 ## Tests
 
-Execute:
+Testes rápidos:
 
 ```bash
-mvn clean test
+mvn test
 ```
 
-Os testes cobrem os principais fluxos de criação, consulta, atualização, exclusão, validações, CPF imutável, integração de Score, segurança, mensageria e idempotência.
+Testes de integração com infraestrutura real:
+
+```bash
+mvn verify -Pintegration
+```
+
+Os testes rápidos cobrem os principais fluxos de criação, consulta, atualização, exclusão, validações, CPF imutável, integração de Score, segurança, mensageria e idempotência.
+
+O teste de integração do Transactional Outbox usa Testcontainers com PostgreSQL, RabbitMQ e Toxiproxy. Ele exige Docker e fica separado da suíte padrão para manter a validação rápida e simples para o avaliador.
 
 ## Error behavior
 
