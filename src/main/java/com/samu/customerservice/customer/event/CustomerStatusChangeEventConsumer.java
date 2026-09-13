@@ -3,10 +3,8 @@ package com.samu.customerservice.customer.event;
 import com.samu.customerservice.customer.Customer;
 import com.samu.customerservice.customer.CustomerRepository;
 import com.samu.customerservice.exception.CustomerNotFoundException;
-import com.samu.customerservice.messaging.ProcessedEvent;
 import com.samu.customerservice.messaging.ProcessedEventRepository;
 import com.samu.customerservice.messaging.RabbitMqConfig;
-import java.time.Instant;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +25,11 @@ public class CustomerStatusChangeEventConsumer {
     @RabbitListener(queues = RabbitMqConfig.CUSTOMER_STATUS_CHANGE_QUEUE)
     @Transactional
     public void consume(CustomerStatusChangeEvent event) {
-        if (processedEventRepository.existsByEventId(event.getEventId())) {
+        int reservedEvents = processedEventRepository.reserveEventIfAbsent(
+                event.getEventId(),
+                event.getEventType());
+
+        if (reservedEvents == 0) {
             return;
         }
 
@@ -36,11 +38,5 @@ public class CustomerStatusChangeEventConsumer {
 
         customer.setStatus(event.getStatus());
         customerRepository.save(customer);
-
-        ProcessedEvent processedEvent = new ProcessedEvent(
-                event.getEventId(),
-                event.getEventType(),
-                Instant.now());
-        processedEventRepository.save(processedEvent);
     }
 }
